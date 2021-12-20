@@ -1,14 +1,14 @@
 {
   "expo": {
-    "name": "trainathon",
+    "name": "Trainathon",
     "slug": "trainathon",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/trainathon_icon.png",
     "splash": {
       "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "resizeMode": "cover",
+      "backgroundColor": "#333333"
     },
     "updates": {
       "fallbackToCacheTimeout": 0
@@ -17,16 +17,18 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "buildNumber": "2",
+      "bundleIdentifier": "com.michaeldcarter28.trainathon"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/trainathon_icon.png",
         "backgroundColor": "#FFFFFF"
       }
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/trainathon_icon.png"
     }
   }
 }
