@@ -104,7 +104,12 @@ var milestones_g = [
   [0, 0, 0],
   [0, 0, 0]
 ];
-var best_time = '∞ : ∞ : ∞';
+
+
+var best_hr  = '∞';
+var best_min = '∞';
+var best_sec = '∞';
+var best_time = best_hr + ' : ' + best_min + ' : ' + best_sec;
 
 export default function App() {
 
