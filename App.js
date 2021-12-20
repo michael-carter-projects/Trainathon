@@ -1,4 +1,7 @@
-import { StatusBar } from 'expo-status-bar';
+import { StatusBar }     from 'expo-status-bar';
+import * as Font         from 'expo-font';
+import * as SplashScreen from 'expo-splash-screen';
+
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useState, useEffect, useCallback, useReducer } from 'react';
@@ -84,8 +87,8 @@ const goals = [
   [4, 4, 26.2],
 ];
 var milestones_g = [
-  [1, 1, 1],
-  [1, 1, 0],
+  [0, 0, 0],
+  [0, 0, 0],
   [0, 0, 0],
   [0, 0, 0],
   [0, 0, 0],
@@ -105,42 +108,11 @@ var best_time = '∞ : ∞ : ∞';
 
 export default function App() {
 
+  const [appIsReady, setAppIsReady] = useState(false);
   const [ignored,    forceUpdate  ] = useReducer(x => x + 1, 0);
   const [milestones, setMilestones] = useState(milestones_g);
 
 
-
-  /*const pressHandler = key => {
-      console.log('Milestones BEFORE delete');
-      console.log(milestones);
-
-      const newMilestones = milestones.filter(milestone => milestone.key !== milestone);
-
-      console.log('Milestones AFTER delete');
-      console.log(milestones);
-
-      setMilestones(newMilestones);
-      storeMilestonesInAsync(newMilestones);
-    };
-    const submitHandler = text => {
-      //if (text.length === 0) return;
-
-      //const key = Math.random().toString();
-
-      console.log('Milestones BEFORE submit');
-      console.log(milestones);
-
-      const newMilestones = [{ text, key }, ...milestones];
-
-      console.log('Milestones AFTER submit');
-      console.log(milestones);
-
-      setMilestones(newMilestones);
-      storeMilestonesInAsync(newMilestones);
-    };*/
-  useEffect(() => {
-    restoreMilestonesFromAsync();
-  }, []);
 
   const asyncStorageKey = '@milestones';
 
@@ -171,8 +143,6 @@ export default function App() {
   const restoreMilestonesFromAsync = () => {
     AsyncStorage.getItem(asyncStorageKey)
       .then(stringifiedMilestones => {
-        console.log('Restored Milestones:');
-        console.log(stringifiedMilestones);
 
         const parsedMilestones = str_to_two_D_arr(stringifiedMilestones);
 
@@ -186,6 +156,41 @@ export default function App() {
       });
   };
 
+  // LOAD ASSETS DURING SPLASH SCREEN =============================================================
+  useEffect(() => {
+    async function prepare() {
+
+      // LOAD ALL OTHER ASSETS WHILE SPLASH SCREEN IS SHOWING ------------------
+      try {
+        // LOAD FONTS ----------------------------------------------------------
+        await Font.loadAsync({
+          Comfortaa_300: require('./assets/fonts/Comfortaa-300.ttf'),
+          Comfortaa_400: require('./assets/fonts/Comfortaa-400.ttf'),
+          Comfortaa_500: require('./assets/fonts/Comfortaa-500.ttf'),
+          Comfortaa_600: require('./assets/fonts/Comfortaa-600.ttf'),
+          Comfortaa_700: require('./assets/fonts/Comfortaa-700.ttf'),
+        });
+
+        restoreMilestonesFromAsync();
+
+      } catch (e) {
+        console.warn(e);
+      } finally {
+        setAppIsReady(true);
+      }
+    }
+    prepare();
+
+
+  }, []);
+  const onLayoutRootView = useCallback(async () => {
+    if (appIsReady) {
+      await SplashScreen.hideAsync();
+    }
+  }, [appIsReady]);
+  if (!appIsReady) {
+    return null;
+  }
 
 
   function get_box_style(indices, week_complete) {
@@ -235,7 +240,7 @@ export default function App() {
                         && milestones[indices.i][2]);
       return (
         <View style={{flex:1}} style={get_box_style(indices, week_complete)}>
-          <Text style={get_text_style(week_complete)}>
+          <Text style={[get_text_style(week_complete), {fontSize:16}]}>
             {'Week '+(indices.i+1)}
           </Text>
         </View>
@@ -246,7 +251,7 @@ export default function App() {
         <TouchableOpacity style={{flex:1}} onPress={() => pressHandler(indices)}>
           <View style={get_box_style(indices, null)}>
             <Text style={get_text_style(milestones[indices.i][indices.j])}>
-              {goals[indices.i][indices.j] + ' miles'}
+              { goals[indices.i][indices.j] !== 26.2 ? (goals[indices.i][indices.j]) : (goals[indices.i][indices.j])}
             </Text>
           </View>
         </TouchableOpacity>
@@ -271,7 +276,7 @@ export default function App() {
       <SafeAreaView style={styles.container}>
 
         <View style={styles.title_bar}>
-          <Text style={{fontSize: 20, color:'#fff'}}>Trainathon</Text>
+          <Text style={styles.title_text}>trainathon</Text>
         </View>
 
         <View style={styles.scrollview}>
@@ -317,6 +322,11 @@ const styles = StyleSheet.create({
     bottom: 6,
     backgroundColor:'rgba(40,40,40,1)'
   },
+  title_text: {
+    fontSize: 26,
+    color:'#fff',
+    fontFamily: 'Comfortaa_700'
+  },
   scrollview: {
     flex:25,
     backgroundColor: 'rgba(40,40,40,1)',
@@ -348,11 +358,15 @@ const styles = StyleSheet.create({
   },
   complete_text: {
     color: 'rgba(255,255,255,1)',
-    fontSize: 16,
+    fontSize: 18,
+    fontFamily: 'Comfortaa_700',
+    bottom:-1
   },
   incomplete_text: {
     color: 'rgba(10,10,10,1)',
-    fontSize: 16,
+    fontSize: 18,
+    fontFamily: 'Comfortaa_500',
+    bottom:-1
   },
   best_time: {
     flex: 1,
