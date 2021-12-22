@@ -25,7 +25,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/trainathon_icon.png",
         "backgroundColor": "#FFFFFF"
-      }
+      },
+      "package": "com.michaeldcarter28.trainathon"
     },
     "web": {
       "favicon": "./assets/trainathon_icon.png"
