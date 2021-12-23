@@ -5,7 +5,7 @@ import * as SplashScreen from 'expo-splash-screen';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useState, useEffect, useCallback, useReducer } from 'react';
-import { Dimensions, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Dimensions, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 
 function two_D_arr_to_str(array) {
@@ -126,9 +126,10 @@ export default function App() {
 
   const [bestTime, setBestTime] = useState(best_time);
 
-  const asyncStorageKey = '@milestones';
+  const milestonesAsyncKey = '@milestones';
+  const bestTimeAsyncKey = '@bestTime';
 
-  function pressHandler(indices) {
+  function updateMilestones(indices) {
 
     let new_milestones = milestones;
     if (milestones[indices.i][indices.j] === 0) {
@@ -146,24 +147,38 @@ export default function App() {
 
     const stringifiedMilestones = two_D_arr_to_str(newMilestones);
 
-    AsyncStorage.setItem(asyncStorageKey, stringifiedMilestones).catch(err => {
+    AsyncStorage.setItem(milestonesAsyncKey, stringifiedMilestones).catch(err => {
       console.warn('Error storing milestones in Async');
       console.warn(err);
     });
   };
 
-  const restoreMilestonesFromAsync = () => {
-    AsyncStorage.getItem(asyncStorageKey)
+  const storeBestTimeInAsync = newMilestones => {
+
+    AsyncStorage.setItem(bestTimeAsyncKey, bestTime).catch(err => {
+      console.warn('Error storing best time in Async');
+      console.warn(err);
+    });
+  };
+
+  const restoreDataFromAsync = () => {
+    AsyncStorage.getItem(milestonesAsyncKey)
       .then(stringifiedMilestones => {
-
         const parsedMilestones = str_to_two_D_arr(stringifiedMilestones);
-
         if (!parsedMilestones) return;
-
         setMilestones(parsedMilestones);
       })
       .catch(err => {
         console.warn('Error restoring milestones from async');
+        console.warn(err);
+      });
+    AsyncStorage.getItem(bestTimeAsyncKey)
+      .then(stringifiedBestTime => {
+        if (!stringifiedBestTime) return;
+        setBestTime(stringifiedBestTime);
+      })
+      .catch(err => {
+        console.warn('Error restoring best time from async');
         console.warn(err);
       });
   };
@@ -183,7 +198,7 @@ export default function App() {
           Comfortaa_700: require('./assets/fonts/Comfortaa-700.ttf'),
         });
 
-        restoreMilestonesFromAsync();
+        restoreDataFromAsync();
 
       } catch (e) {
         console.warn(e);
@@ -200,9 +215,7 @@ export default function App() {
       await SplashScreen.hideAsync();
     }
   }, [appIsReady]);
-  if (!appIsReady) {
-    return null;
-  }
+  if (!appIsReady) { return null; }
 
   //
   function get_box_style(indices, week_complete) {
@@ -242,7 +255,15 @@ export default function App() {
     }
   }
 
-
+  //
+  function alert_bad_number() {
+    Alert.alert(
+      "Invalid Value",
+      "Enter a two digit number less than 60",
+      [ { text: "Ok" } ]
+    );
+  }
+  //
   function delete_from_number(interval) {
     if      (interval === 1) {
       if (hourBox.length > 1) {
@@ -269,20 +290,36 @@ export default function App() {
       }
     }
   }
+  //
   function add_to_number(interval, number) {
 
     if      (interval === 1) {
-      setHourBox(hourBox+number);
+      if (hourBox+number > 59 || hourBox.length == 2) {
+        alert_bad_number();
+      }
+      else {
+        setHourBox(hourBox+number);
+      }
     }
     else if (interval === 2) {
-      setMinuteBox(minuteBox+number);
+      if (minuteBox+number > 59 || minuteBox.length == 2) {
+        alert_bad_number();
+      }
+      else {
+        setMinuteBox(minuteBox+number);
+      }
     }
     else if (interval === 3) {
-      setSecondBox(secondBox+number);
+      if (secondBox+number > 59 || secondBox.length == 2) {
+        alert_bad_number();
+      }
+      else {
+        setSecondBox(secondBox+number);
+      }
     }
   }
+  //
   function set_time_box(int, number) {
-
     setInterval(int);
 
     if (number === -1) {
@@ -292,31 +329,48 @@ export default function App() {
       add_to_number(int, number)
     }
   }
+  //
   function update_best_time() {
     setBestTime(hourBox+':'+minuteBox+':'+secondBox);
+    storeBestTimeInAsync()
+    forceUpdate();
     setEditBestTimeView(false);
+  }
+  //
+  function get_outline(box) {
+    if (interval === box) {
+      return {
+        backgroundColor: 'rgba(180,200,255,1)',
+        borderColor:     'rgba( 80,150,255,1)',
+        color:           'rgba(  0,100,200,1)',
+      }
+    }
+    else {
+      return null;
+    }
   }
 
 
+  //
   function BestTimeEntryBox() {
     return (
       <View style={{width:screen_width, height:screen_height/10, flexDirection:'row'}}>
-        <TouchableOpacity style={styles.number_button} onPress={() => setInterval(1)}>
-          <Text style={[styles.number_text, {fontSize:24}]}>{hourBox}</Text>
+        <TouchableOpacity style={[styles.number_button, get_outline(1)]} onPress={() => setInterval(1)}>
+          <Text style={[styles.number_text, {fontSize:24}, get_outline(1)]}>{hourBox}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.number_button} onPress={() => setInterval(2)}>
-          <Text style={[styles.number_text, {fontSize:24}]}>{minuteBox}</Text>
+        <TouchableOpacity style={[styles.number_button, get_outline(2)]} onPress={() => setInterval(2)}>
+          <Text style={[styles.number_text, {fontSize:24}, get_outline(2)]}>{minuteBox}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.number_button} onPress={() => setInterval(3)}>
-          <Text style={[styles.number_text, {fontSize:24}]}>{secondBox}</Text>
+        <TouchableOpacity style={[styles.number_button, get_outline(3)]} onPress={() => setInterval(3)}>
+          <Text style={[styles.number_text, {fontSize:24}, get_outline(3)]}>{secondBox}</Text>
         </TouchableOpacity>
       </View>
     );
   }
-
+  //
   function NumberPad() {
     return (
-      <View style={{width:screen_width, height:screen_height/3 }}>
+      <View style={{width:screen_width, height:screen_height/3}}>
 
         <View style={{width:screen_width, flexDirection:'row'}}>
           <TouchableOpacity style={styles.number_button} onPress={() => set_time_box(interval, 1)}>
@@ -357,30 +411,35 @@ export default function App() {
         <View style={{width:screen_width, flexDirection:'row'}}>
           <View style={styles.number_button}/>
 
-          <TouchableOpacity style={styles.number_button} onPress={() => set_time_box(interval, 0)}>
-            <Text style={styles.number_text}>0</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.number_button} onPress={() => set_time_box(interval, -1)}>
-            <Text style={styles.number_text}>{'<x'}</Text>
-          </TouchableOpacity>
+            <TouchableOpacity style={styles.number_button} onPress={() => set_time_box(interval, 0)}>
+              <Text style={styles.number_text}>0</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.number_button} onPress={() => set_time_box(interval, -1)}>
+              <Text style={styles.number_text}>{'<x'}</Text>
+            </TouchableOpacity>
 
-        </View>
-
+          </View>
       </View>
     );
   }
-
+  //
   function UpdateBestTimeButton() {
     return (
-      <TouchableOpacity style={styles.submit_button} onPress={() => update_best_time()}>
-        <Text style={[styles.number_text, {fontSize:24}]}>Enter</Text>
-      </TouchableOpacity>
+      <View style={{width:screen_width, height:screen_height/10, flexDirection:'row'}}>
+        <TouchableOpacity style={styles.cancel_button} onPress={() => setEditBestTimeView(0)}>
+          <Text style={styles.submit_text}>Cancel</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.submit_button} onPress={() => update_best_time()}>
+          <Text style={styles.submit_text}>Enter</Text>
+        </TouchableOpacity>
+      </View>
     );
   }
-
+  //
   function EditBestTimeView() {
     return (
       <View style={styles.edit_best_time_view}>
+        <Text style={styles.enter_new_time}>Enter new best time</Text>
         <BestTimeEntryBox/>
         <NumberPad/>
         <UpdateBestTimeButton/>
@@ -388,7 +447,7 @@ export default function App() {
     );
   }
 
-
+  //
   function Box(indices) {
 
     if (indices.j === 3) {
@@ -405,7 +464,7 @@ export default function App() {
     }
     else {
       return (
-        <TouchableOpacity style={{flex:1}} onPress={() => pressHandler(indices)}>
+        <TouchableOpacity style={{flex:1}} onPress={() => updateMilestones(indices)}>
           <View style={get_box_style(indices, null)}>
             <Text style={get_text_style(milestones[indices.i][indices.j])}>
               { goals[indices.i][indices.j] !== 26.2 ? (goals[indices.i][indices.j]) : (goals[indices.i][indices.j])}
@@ -415,7 +474,7 @@ export default function App() {
       );
     }
   }
-
+  //
   function Row(i) {
 
     return (
@@ -436,31 +495,34 @@ export default function App() {
           <Text style={styles.title_text}>trainathon</Text>
         </View>
 
-        <View style={styles.scrollview}>
+        { !editBestTimeView ? (
+            <View style={styles.scrollview}>
 
-            <Row style={{flex:1}} i={ 0}/>
-            <Row style={{flex:1}} i={ 1}/>
-            <Row style={{flex:1}} i={ 2}/>
-            <Row style={{flex:1}} i={ 3}/>
-            <Row style={{flex:1}} i={ 4}/>
-            <Row style={{flex:1}} i={ 5}/>
-            <Row style={{flex:1}} i={ 6}/>
-            <Row style={{flex:1}} i={ 7}/>
-            <Row style={{flex:1}} i={ 8}/>
-            <Row style={{flex:1}} i={ 9}/>
-            <Row style={{flex:1}} i={10}/>
-            <Row style={{flex:1}} i={11}/>
-            <Row style={{flex:1}} i={12}/>
-            <Row style={{flex:1}} i={13}/>
-            <Row style={{flex:1}} i={14}/>
-            <Row style={{flex:1}} i={15}/>
+                <Row style={{flex:1}} i={ 0}/>
+                <Row style={{flex:1}} i={ 1}/>
+                <Row style={{flex:1}} i={ 2}/>
+                <Row style={{flex:1}} i={ 3}/>
+                <Row style={{flex:1}} i={ 4}/>
+                <Row style={{flex:1}} i={ 5}/>
+                <Row style={{flex:1}} i={ 6}/>
+                <Row style={{flex:1}} i={ 7}/>
+                <Row style={{flex:1}} i={ 8}/>
+                <Row style={{flex:1}} i={ 9}/>
+                <Row style={{flex:1}} i={10}/>
+                <Row style={{flex:1}} i={11}/>
+                <Row style={{flex:1}} i={12}/>
+                <Row style={{flex:1}} i={13}/>
+                <Row style={{flex:1}} i={14}/>
+                <Row style={{flex:1}} i={15}/>
 
-            <TouchableOpacity style={styles.best_time} onPress={() => setEditBestTimeView(!editBestTimeView)}>
-                <Text style={styles.incomplete_text}>{'Best: ' + bestTime}</Text>
-            </TouchableOpacity>
-        </View>
-
-        { editBestTimeView ? ( <EditBestTimeView/> ) : ( null ) }
+                <TouchableOpacity style={styles.best_time} onPress={() => setEditBestTimeView(!editBestTimeView)}>
+                  <Text style={styles.incomplete_text}>{'Best Time: ' + bestTime}</Text>
+                </TouchableOpacity>
+            </View>
+          ) : (
+            <EditBestTimeView/>
+          )
+        }
 
       </SafeAreaView>
       <StatusBar style="light"/>
@@ -514,7 +576,7 @@ const styles = StyleSheet.create({
     backgroundColor: light_grey,
     borderColor:     dark_grey,
     borderWidth:  4,
-    borderRadius: 4,
+    borderRadius: 100,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -530,13 +592,20 @@ const styles = StyleSheet.create({
     fontFamily: 'Comfortaa_500',
     bottom:-1
   },
+  enter_new_time: {
+    alignSelf: 'center',
+    fontSize: 30,
+    bottom: 30,
+    color: 'rgba(255,255,255,1)',
+    fontFamily: 'Comfortaa_400',
+  },
   best_time: {
     flex: 1,
     margin:  5,
     backgroundColor: 'rgba(200,200,200,1)',
     borderColor:     'rgba(150,150,150,1)',
     borderWidth:  4,
-    borderRadius: 4,
+    borderRadius: 100,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -554,7 +623,7 @@ const styles = StyleSheet.create({
     backgroundColor: light_grey,
     borderColor:     dark_grey,
     borderWidth:  4,
-    borderRadius: 4,
+    borderRadius: 100,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -563,14 +632,32 @@ const styles = StyleSheet.create({
     fontFamily: 'Comfortaa_700',
     bottom:-1
   },
-  submit_button: {
+  cancel_button: {
+    flex: 1,
     height: screen_height/18,
     margin:10,
-    backgroundColor: 'rgba(60,180,50,1)',
-    borderColor:     'rgba(0,100,0,1)',
+    backgroundColor: 'rgba(255,100, 0,1)',
+    borderColor:     'rgba(235, 80, 0,1)',
     borderWidth:  4,
-    borderRadius: 4,
+    borderRadius: 100,
     alignItems: 'center',
     justifyContent: 'center',
-  }
+  },
+  submit_button: {
+    flex: 1,
+    height: screen_height/18,
+    margin:10,
+    backgroundColor: 'rgba(50,120,255,1)',
+    borderColor:     'rgba(30,100,235,1)',
+    borderWidth:  4,
+    borderRadius: 100,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  submit_text: {
+    fontSize: 24,
+    fontFamily: 'Comfortaa_700',
+    bottom: -1,
+    color: 'rgba(255,255,255,1)'
+  },
 });
