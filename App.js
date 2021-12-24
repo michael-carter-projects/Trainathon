@@ -105,7 +105,6 @@ var milestones_g = [
   [0, 0, 0]
 ];
 
-
 var best_hr  = '∞';
 var best_min = '∞';
 var best_sec = '∞';
