@@ -113,22 +113,21 @@ var best_time = best_hr + ' : ' + best_min + ' : ' + best_sec;
 
 export default function App() {
 
-  const [appIsReady, setAppIsReady] = useState(false);
-  const [ignored,    forceUpdate  ] = useReducer(x => x + 1, 0);
-  const [milestones, setMilestones] = useState(milestones_g);
-
-  const [editBestTimeView, setEditBestTimeView] = useState()
-
-  const [hourBox,   setHourBox  ] = useState('');
-  const [minuteBox, setMinuteBox] = useState('');
-  const [secondBox, setSecondBox] = useState('');
-  const [interval,  setInterval ] = useState(0);
-
-  const [bestTime, setBestTime] = useState(best_time);
-
+  // ===============================================================================================
+  // HOOKS FOR STORING AND UPDAING INFO
+  const [appIsReady,   setAppIsReady  ] = useState(false);
+  const [ignored,      forceUpdate    ] = useReducer(x => x + 1, 0);
+  const [milestones,   setMilestones  ] = useState(milestones_g);
+  const [showEditView, setShowEditView] = useState()
+  const [hourBox,      setHourBox     ] = useState('');
+  const [minuteBox,    setMinuteBox   ] = useState('');
+  const [secondBox,    setSecondBox   ] = useState('');
+  const [interval,     setInterval    ] = useState(0);
+  const [bestTime,     setBestTime    ] = useState(best_time);
+  // ASYNC STORAGE KEYS ----------------------------------------------------------------------------
   const milestonesAsyncKey = '@milestones';
-  const bestTimeAsyncKey = '@bestTime';
-
+  const bestTimeAsyncKey   = '@bestTime';
+  // UPDATE MILESTONES HOOKS -----------------------------------------------------------------------
   function updateMilestones(indices) {
 
     let new_milestones = milestones;
@@ -142,7 +141,7 @@ export default function App() {
     storeMilestonesInAsync(new_milestones);
     forceUpdate();
   };
-
+  // STORE NEW MILESTONES IN ASYNC STORAGE ---------------------------------------------------------
   const storeMilestonesInAsync = newMilestones => {
 
     const stringifiedMilestones = two_D_arr_to_str(newMilestones);
@@ -152,7 +151,14 @@ export default function App() {
       console.warn(err);
     });
   };
-
+  // UPDATE THE BEST TIME HOOKS --------------------------------------------------------------------
+  function update_best_time() {
+    setBestTime(hourBox+':'+minuteBox+':'+secondBox);
+    storeBestTimeInAsync()
+    forceUpdate();
+    setShowEditView(false);
+  }
+  // STORE NEW BEST TIME IN ASYNC STORAGE ----------------------------------------------------------
   const storeBestTimeInAsync = newMilestones => {
 
     AsyncStorage.setItem(bestTimeAsyncKey, bestTime).catch(err => {
@@ -160,7 +166,7 @@ export default function App() {
       console.warn(err);
     });
   };
-
+  // RESTORE MILESTONES AND BEST TIME FROM ASYNC STORAGE -------------------------------------------
   const restoreDataFromAsync = () => {
     AsyncStorage.getItem(milestonesAsyncKey)
       .then(stringifiedMilestones => {
@@ -183,7 +189,8 @@ export default function App() {
       });
   };
 
-  // LOAD ASSETS DURING SPLASH SCREEN =============================================================
+
+  // LOAD ASSETS DURING SPLASH SCREEN ==============================================================
   useEffect(() => {
     async function prepare() {
 
@@ -217,7 +224,8 @@ export default function App() {
   }, [appIsReady]);
   if (!appIsReady) { return null; }
 
-  //
+  // ===============================================================================================
+  // RETURNS STYLE FOR CHECKBOXES ------------------------------------------------------------------
   function get_box_style(indices, week_complete) {
 
     if (week_complete !== null && week_complete === 0) {
@@ -245,7 +253,7 @@ export default function App() {
       return styles.incomplete_box;
     }
   }
-  //
+  // RETURNS TEXT STYLE FOR CHECKBOXES -------------------------------------------------------------
   function get_text_style(complete) {
     if (complete === 1) {
       return styles.complete_text;
@@ -255,7 +263,8 @@ export default function App() {
     }
   }
 
-  //
+  // ===============================================================================================
+  // ALERT USER TO INPUT A DIFFERENT NUMBER --------------------------------------------------------
   function alert_bad_number() {
     Alert.alert(
       "Invalid Value",
@@ -263,7 +272,7 @@ export default function App() {
       [ { text: "Ok" } ]
     );
   }
-  //
+  // DELETE FROM NUMBER FIELD ----------------------------------------------------------------------
   function delete_from_number(interval) {
     if      (interval === 1) {
       if (hourBox.length > 1) {
@@ -290,7 +299,7 @@ export default function App() {
       }
     }
   }
-  //
+  // ADD TO NUMBER FIELD ---------------------------------------------------------------------------
   function add_to_number(interval, number) {
 
     if      (interval === 1) {
@@ -318,7 +327,7 @@ export default function App() {
       }
     }
   }
-  //
+  // UPDATE CURRENT TIME BOX BASED ON BOX AND NUMBER INPUT -----------------------------------------
   function set_time_box(int, number) {
     setInterval(int);
 
@@ -329,15 +338,8 @@ export default function App() {
       add_to_number(int, number)
     }
   }
-  //
-  function update_best_time() {
-    setBestTime(hourBox+':'+minuteBox+':'+secondBox);
-    storeBestTimeInAsync()
-    forceUpdate();
-    setEditBestTimeView(false);
-  }
-  //
-  function get_outline(box) {
+  // GET STYLE FOR NUMBER INPUT BOX ----------------------------------------------------------------
+  function get_number_input_style(box) {
     if (interval === box) {
       return {
         backgroundColor: 'rgba(180,200,255,1)',
@@ -350,24 +352,24 @@ export default function App() {
     }
   }
 
-
-  //
+  // ===============================================================================================
+  // ENTRY BOXES FOR BEST TIME ---------------------------------------------------------------------
   function BestTimeEntryBox() {
     return (
       <View style={{width:screen_width, height:screen_height/10, flexDirection:'row'}}>
-        <TouchableOpacity style={[styles.number_button, get_outline(1)]} onPress={() => setInterval(1)}>
-          <Text style={[styles.number_text, {fontSize:24}, get_outline(1)]}>{hourBox}</Text>
+        <TouchableOpacity style={[styles.number_button, get_number_input_style(1)]} onPress={() => setInterval(1)}>
+          <Text style={[styles.number_text, {fontSize:24}, get_number_input_style(1)]}>{hourBox}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.number_button, get_outline(2)]} onPress={() => setInterval(2)}>
-          <Text style={[styles.number_text, {fontSize:24}, get_outline(2)]}>{minuteBox}</Text>
+        <TouchableOpacity style={[styles.number_button, get_number_input_style(2)]} onPress={() => setInterval(2)}>
+          <Text style={[styles.number_text, {fontSize:24}, get_number_input_style(2)]}>{minuteBox}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.number_button, get_outline(3)]} onPress={() => setInterval(3)}>
-          <Text style={[styles.number_text, {fontSize:24}, get_outline(3)]}>{secondBox}</Text>
+        <TouchableOpacity style={[styles.number_button, get_number_input_style(3)]} onPress={() => setInterval(3)}>
+          <Text style={[styles.number_text, {fontSize:24}, get_number_input_style(3)]}>{secondBox}</Text>
         </TouchableOpacity>
       </View>
     );
   }
-  //
+  // NUMBER PAD FOR ENTERING BEST TIME -------------------------------------------------------------
   function NumberPad() {
     return (
       <View style={{width:screen_width, height:screen_height/3}}>
@@ -422,11 +424,11 @@ export default function App() {
       </View>
     );
   }
-  //
-  function UpdateBestTimeButton() {
+  // RENDER THE CANCEL AND ENTER BUTTONS -----------------------------------------------------------
+  function CancelEnter() {
     return (
       <View style={{width:screen_width, height:screen_height/10, flexDirection:'row'}}>
-        <TouchableOpacity style={styles.cancel_button} onPress={() => setEditBestTimeView(0)}>
+        <TouchableOpacity style={styles.cancel_button} onPress={() => setShowEditView(0)}>
           <Text style={styles.submit_text}>Cancel</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.submit_button} onPress={() => update_best_time()}>
@@ -435,19 +437,20 @@ export default function App() {
       </View>
     );
   }
-  //
+  // SHOW THE BEST TIME EDITOR ---------------------------------------------------------------------
   function EditBestTimeView() {
     return (
       <View style={styles.edit_best_time_view}>
         <Text style={styles.enter_new_time}>Enter new best time</Text>
         <BestTimeEntryBox/>
         <NumberPad/>
-        <UpdateBestTimeButton/>
+        <CancelEnter/>
       </View>
     );
   }
 
-  //
+  // ===============================================================================================
+  // RENDER A SINGLE MILES CHECKBOX ----------------------------------------------------------------
   function Box(indices) {
 
     if (indices.j === 3) {
@@ -474,7 +477,7 @@ export default function App() {
       );
     }
   }
-  //
+  // RENDER A ROW OF MILES CHECKBOXES --------------------------------------------------------------
   function Row(i) {
 
     return (
@@ -487,6 +490,7 @@ export default function App() {
     );
   }
 
+  // RENDER THE WHOLE APP ==========================================================================
   return (
     <View style={{flex:1, backgroundColor:'rgba(50,50,50,1)'}}>
       <SafeAreaView style={styles.container}>
@@ -495,7 +499,7 @@ export default function App() {
           <Text style={styles.title_text}>trainathon</Text>
         </View>
 
-        { !editBestTimeView ? (
+        { !showEditView ? (
             <View style={styles.scrollview}>
 
                 <Row style={{flex:1}} i={ 0}/>
@@ -515,7 +519,7 @@ export default function App() {
                 <Row style={{flex:1}} i={14}/>
                 <Row style={{flex:1}} i={15}/>
 
-                <TouchableOpacity style={styles.best_time} onPress={() => setEditBestTimeView(!editBestTimeView)}>
+                <TouchableOpacity style={styles.best_time} onPress={() => setShowEditView(!showEditView)}>
                   <Text style={styles.incomplete_text}>{'Best Time: ' + bestTime}</Text>
                 </TouchableOpacity>
             </View>
